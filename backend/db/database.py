@@ -1,4 +1,4 @@
-# PostgreSQL database connection pooling using asyncpg
+# PostgreSQL database connection pooling using asyncpg with SSL enabled
 import asyncpg
 import os
 from contextlib import asynccontextmanager
@@ -10,6 +10,7 @@ async def get_pool():
     if _pool is None:
         _pool = await asyncpg.create_pool(
             dsn=os.getenv('DATABASE_URL'),
+            ssl='require', # Enforces SSL connections required by cloud hosts like Railway
             min_size=2,
             max_size=10,
             command_timeout=30

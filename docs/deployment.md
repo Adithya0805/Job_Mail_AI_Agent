@@ -1,6 +1,6 @@
 # Deployment Guide — Job Mail AI
 
-A beginner-friendly step-by-step guide to deploying Job Mail AI to production.
+A beginner-friendly step-by-step guide to deploying Job Mail AI to production after migrating to Firebase Auth + PostgreSQL.
 Total time: approximately 30 minutes.
 
 ---
@@ -9,172 +9,117 @@ Total time: approximately 30 minutes.
 
 | Step | What you do | Result |
 |------|------------|--------|
-| 1 | Supabase setup | Database + Auth ready |
-| 2 | Google Cloud OAuth setup | Login + Gmail send ready |
-| 3 | Push to GitHub | Code in cloud |
-| 4 | Deploy backend to Railway | FastAPI live on public URL |
-| 5 | Deploy frontend to Vercel | React app live on public URL |
-| 6 | Update redirect URLs | Auth works in production |
+| 1 | Firebase Setup | Auth provider + Web app ready |
+| 2 | Railway PostgreSQL Setup | Database ready |
+| 3 | Google Cloud OAuth Setup | Google API credentials + Gmail send ready |
+| 4 | Push to GitHub | Monorepo code uploaded |
+| 5 | Deploy backend to Railway | FastAPI server live on public URL |
+| 6 | Deploy frontend to Vercel | React app live on public URL |
 | 7 | Run smoke tests | Verify everything works |
 
 ---
 
-## Step 1 — Supabase Setup
+## Step 1 — Firebase Setup
 
-1. Go to [supabase.com](https://supabase.com) → Create account → New Project
-2. Wait ~2 minutes for project to provision
-3. Go to **SQL Editor** → paste the contents of `db_schema.sql` → Run
-4. Go to **Authentication → Providers → Google** → Enable it
-5. Note your credentials from **Settings → API**:
-   - Project URL → `SUPABASE_URL`
-   - `anon public` key → `VITE_SUPABASE_ANON_KEY`
-   - `service_role` key → `SUPABASE_SERVICE_KEY`
+1. Go to [console.firebase.google.com](https://console.firebase.google.com) → Create account → New Project named `job-mail-ai`.
+2. Disable Google Analytics (not needed).
+3. Create a Web App: Click the `</>` web icon. Name it `job-mail-ai-web`.
+4. Copy the `firebaseConfig` variables — you will need these for Vercel:
+   - `apiKey` $\rightarrow$ `VITE_FIREBASE_API_KEY`
+   - `authDomain` $\rightarrow$ `VITE_FIREBASE_AUTH_DOMAIN`
+   - `projectId` $\rightarrow$ `VITE_FIREBASE_PROJECT_ID`
+   - `appId` $\rightarrow$ `VITE_FIREBASE_APP_ID`
+5. Enable **Google Auth**: Go to **Authentication** $\rightarrow$ **Sign-in method** $\rightarrow$ **Google** $\rightarrow$ Click **Enable** $\rightarrow$ Select project support email $\rightarrow$ Click **Save**.
+6. **Get Service Account Key (For Backend)**:
+   - Go to Project Settings (gear icon) $\rightarrow$ **Service accounts**.
+   - Click **Generate new private key** and download the JSON.
+   - You will paste this JSON as a Railway environment variable `FIREBASE_SERVICE_ACCOUNT_JSON`.
 
 ---
 
-## Step 2 — Google Cloud OAuth Setup
+## Step 2 — Railway PostgreSQL Setup
 
-1. Go to [console.cloud.google.com](https://console.cloud.google.com) → New Project
-2. Enable the **Gmail API**: APIs & Services → Library → search "Gmail API" → Enable
-3. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**
-4. Application type: **Web application**
+1. Go to [railway.app](https://railway.app) $\rightarrow$ Open your project.
+2. Click **+ New** (or Add Plugin) $\rightarrow$ **PostgreSQL**.
+3. Railway provisions a Postgres database instantly.
+4. Click on the **PostgreSQL** card and navigate to the **Variables** tab.
+5. Copy the `DATABASE_URL` (format: `postgresql://user:pass@host:port/dbname`).
+6. You will add this URL to the FastAPI backend variables in Step 5.
+
+---
+
+## Step 3 — Google Cloud OAuth Setup
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com) → Open your project.
+2. Enable the **Gmail API**: APIs & Services → Library → search "Gmail API" → Enable.
+3. Go to **APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID**.
+4. Application type: **Web application**.
 5. Add **Authorized JavaScript origins**:
    ```
    http://localhost:5173
-   https://your-vercel-app.vercel.app   ← add after Step 5
+   https://your-vercel-app.vercel.app   ← Add after Step 6
    ```
 6. Add **Authorized redirect URIs**:
-   ```
-   http://localhost:5173/auth/callback
-   https://your-vercel-app.vercel.app/auth/callback
-   https://doudaunmuoufwecuasbg.supabase.co/auth/v1/callback
-   ```
-7. Copy **Client ID** → `GOOGLE_CLIENT_ID`
-8. Copy **Client Secret** → `GOOGLE_CLIENT_SECRET`
-9. In Supabase → **Authentication → Providers → Google**: paste Client ID and Secret → Save
+   - `https://your-project-id.firebaseapp.com/__/auth/handler` (This is the Firebase Auth handler URL shown in your Firebase Google Auth settings).
+7. Copy **Client ID** $\rightarrow$ `GOOGLE_CLIENT_ID`
+8. Copy **Client Secret** $\rightarrow$ `GOOGLE_CLIENT_SECRET`
+9. In Firebase → **Authentication → Sign-in method → Google** edit settings: paste Client ID and Secret → Click **Save**.
 
 ---
 
-## Step 3 — Push to GitHub
+## Step 4 — Push to GitHub
 
+Stage and commit all changes, then push to main:
 ```bash
-cd job-mail-agent
-
-# Initialize git if not done already
-git init
 git add .
-git commit -m "feat: Job Mail AI — complete 4-phase build"
-git branch -M main
-
-# Create repo at github.com then:
-git remote add origin https://github.com/Adithya0805/job-mail-agent.git
-git push -u origin main
+git commit -m "migration: firebase auth and postgresql backend"
+git push
 ```
 
-> **Important:** Your `.gitignore` excludes all `.env` files. Your secrets are safe.
-
 ---
 
-## Step 4 — Deploy Backend to Railway
+## Step 5 — Deploy Backend to Railway
 
-### Option A: Web UI (Recommended for beginners)
-
-1. Go to [railway.app](https://railway.app) → Sign up with GitHub
-2. Click **New Project → Deploy from GitHub repo**
-3. Select your `job-mail-agent` repo
-4. Set **Root Directory** to `/backend`
-5. Railway detects the `Dockerfile` automatically → Click **Deploy**
-6. Go to **Settings → Variables → Add Variable** for each:
+1. Railway Dashboard → Click **+ New** → **Github Repo** → select `Job_Mail_AI_Agent`.
+2. Go to **Settings** → Set **Root Directory** to `/`. (A root-level `railway.toml` points Railway to `backend/Dockerfile` automatically).
+3. Add the following **Environment Variables** under Settings:
 
 | Variable | Value |
 |----------|-------|
 | `GEMINI_API_KEY` | Your Gemini key |
-| `SUPABASE_URL` | `https://doudaunmuoufwecuasbg.supabase.co` |
-| `SUPABASE_SERVICE_KEY` | Your service role key |
 | `GOOGLE_CLIENT_ID` | Your Google Client ID |
 | `GOOGLE_CLIENT_SECRET` | Your Google Client Secret |
-| `FRONTEND_URL` | *(leave blank for now — fill after Step 5)* |
+| `DATABASE_URL` | Your Railway PostgreSQL `DATABASE_URL` (includes `sslmode=require`) |
+| `FRONTEND_URL` | *(leave blank for now — update after Step 6)* |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | Minified content of your downloaded service account JSON (Single line, no spaces) |
 | `PYTHON_VERSION` | `3.11` |
 
-7. Go to **Settings → Networking → Generate Domain**
-8. Copy your Railway URL → looks like: `https://job-mail-agent-production.up.railway.app`
-
-### Option B: CLI
-
-```bash
-npm install -g @railway/cli
-railway login
-cd backend
-railway init
-railway up
-```
-
-### Verify backend is live
-
-```bash
-curl https://your-railway-url.up.railway.app/health
-# Expected: {"status":"ok","version":"1.0.0"}
-```
+4. Go to **Settings → Networking → Generate Domain**.
+5. Copy your Railway URL (e.g. `https://your-backend.up.railway.app`).
 
 ---
 
-## Step 5 — Deploy Frontend to Vercel
+## Step 6 — Deploy Frontend to Vercel
 
-### Option A: Web UI (Recommended for beginners)
-
-1. Go to [vercel.com](https://vercel.com) → Sign up with GitHub
-2. Click **Add New Project → Import** your `job-mail-agent` repo
-3. Set **Root Directory** to `/frontend`
-4. Framework Preset: **Vite** (auto-detected)
-5. Build Command: `npm run build` (auto-detected)
-6. Output Directory: `dist` (auto-detected)
-7. Add **Environment Variables**:
+1. Go to [vercel.com](https://vercel.com) → **Add New Project → Import** your repository.
+2. Set **Root Directory** to `frontend`.
+3. Framework Preset: **Vite** (auto-detected).
+4. Add the following **Environment Variables**:
 
 | Variable | Value |
 |----------|-------|
-| `VITE_SUPABASE_URL` | `https://doudaunmuoufwecuasbg.supabase.co` |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
-| `VITE_API_URL` | Your Railway URL from Step 4 |
+| `VITE_FIREBASE_API_KEY` | Your Firebase Web App API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | `<project-id>.firebaseapp.com` |
+| `VITE_FIREBASE_PROJECT_ID` | `<project-id>` |
+| `VITE_FIREBASE_APP_ID` | Your Firebase App ID |
+| `VITE_API_URL` | Your Railway backend URL from Step 5 |
 
-8. Click **Deploy**
-9. Copy your Vercel URL → looks like: `https://job-mail-agent.vercel.app`
-
-### Option B: CLI
-
-```bash
-npm install -g vercel
-cd frontend
-vercel login
-vercel --prod
-```
-
----
-
-## Step 6 — Update Redirect URLs
-
-### 6a. Update Railway FRONTEND_URL
-
-1. Railway Dashboard → Your project → Variables
-2. Set `FRONTEND_URL` = `https://job-mail-agent.vercel.app`
-3. Railway auto-redeploys → CORS now allows your Vercel domain
-
-### 6b. Update Supabase redirect URLs
-
-1. Supabase → **Authentication → URL Configuration**
-2. **Site URL**: `https://job-mail-agent.vercel.app`
-3. **Redirect URLs** → Add:
-   ```
-   http://localhost:5173/auth/callback
-   https://job-mail-agent.vercel.app/auth/callback
-   ```
-
-### 6c. Update Google Cloud OAuth (if not done in Step 2)
-
-1. Google Cloud Console → APIs & Services → Credentials
-2. Edit your OAuth 2.0 Client ID
-3. Add to **Authorized JavaScript origins**: `https://job-mail-agent.vercel.app`
-4. Add to **Authorized redirect URIs**: `https://job-mail-agent.vercel.app/auth/callback`
-5. Save
+5. Click **Deploy**.
+6. Copy your Vercel URL (e.g., `https://your-app.vercel.app`).
+7. **Final Domain Wiring**:
+   - In **Railway**, update `FRONTEND_URL` to your Vercel domain.
+   - In **Firebase Console → Authentication → Settings → Authorized domains**, add your Vercel domain (`your-app.vercel.app`).
+   - In **Google Cloud OAuth settings**, add your Vercel domain under **Authorized JavaScript origins**.
 
 ---
 
@@ -199,10 +144,8 @@ PASSED tests/test_health.py::test_send_email_requires_auth
 ```
 
 Then manually verify in browser:
-1. Visit your Vercel URL → see login screen
-2. Click "Sign in with Google" → OAuth consent screen appears
-3. After login → home page loads with your name in navbar
-4. Generate an email → check your Gmail Sent folder
-5. Visit `/dashboard` → application is logged
-
-**Your app is live!**
+1. Visit your Vercel URL → see login screen.
+2. Click "Sign in with Google" → Popup window opens. Select Google account and authorize scopes.
+3. After login → home page loads with avatar in navbar.
+4. Generate and send an email → check Gmail Sent folder and the applications dashboard.
+5. In Railway PostgreSQL plugin Data tab, verify rows are populated in both `profiles` and `applications` tables.
