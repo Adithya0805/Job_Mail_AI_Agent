@@ -1,25 +1,21 @@
-# Use python:3.11-slim for a smaller image (~200MB vs ~900MB full),
-# which results in faster Railway deploys and lower memory usage.
-
+# python:3.11-slim — smaller image (~200MB vs ~900MB full), faster Railway deploys
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# gcc is required to compile certain Python C extensions
-# (e.g., cryptography, grpcio used by google-generativeai).
-# Removed after install to keep image lean.
+# gcc needed to compile C extensions (cryptography, grpcio used by google-generativeai)
 RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Copy only the backend folder contents into the container
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 EXPOSE 8000
 
-# --workers 2 is required because SSE endpoints hold long-lived connections.
-# A single worker would block ALL other requests while streaming.
-# Two workers allow SSE + regular API calls to run concurrently.
+# --workers 2: SSE endpoints hold long-lived connections.
+# A single worker blocks ALL other requests while streaming.
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
