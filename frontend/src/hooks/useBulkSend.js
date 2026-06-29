@@ -1,5 +1,6 @@
+// useBulkSend hook updated to use Firebase Auth token and custom X-Gmail-Token header
 import { useState, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth } from '../lib/firebase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -33,14 +34,17 @@ export function useBulkSend() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+      const token = await user.getIdToken();
+      const gmailToken = sessionStorage.getItem('gmail_token');
 
       const response = await fetch(`${BASE_URL}/api/bulk/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Gmail-Token': gmailToken || ''
         },
         body: JSON.stringify({ emails: selected_emails }),
         signal: abortControllerRef.current.signal

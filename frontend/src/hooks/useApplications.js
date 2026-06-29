@@ -1,5 +1,6 @@
+// Applications hook updated to use Firebase Auth token
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth } from '../lib/firebase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -18,11 +19,12 @@ export function useApplications() {
   };
 
   const getHeaders = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) throw new Error('Not authenticated');
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not authenticated');
+    const token = await user.getIdToken();
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${session.access_token}`
+      'Authorization': `Bearer ${token}`
     };
   };
 

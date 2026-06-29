@@ -1,13 +1,12 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import BulkApply from './pages/BulkApply';
 
-// Root App component with React Router
+// Root App component with React Router and Firebase Auth Protection
 function App() {
   return (
     <BrowserRouter>
@@ -45,7 +44,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-        <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
     </BrowserRouter>
   );

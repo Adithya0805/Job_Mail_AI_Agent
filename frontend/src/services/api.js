@@ -1,21 +1,24 @@
-import { supabase } from '../lib/supabase';
+// API service for interacting with the backend using Firebase Auth tokens
+import { auth } from '../lib/firebase'
 
-// All API calls route through BASE_URL — set VITE_API_URL in env for production
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+async function getAuthHeader() {
+  const user = auth.currentUser
+  if (!user) throw new Error('Not authenticated')
+  // Firebase getIdToken auto-refreshes when expired. No manual token management needed.
+  const token = await user.getIdToken()
+  return { 'Authorization': `Bearer ${token}` }
+}
 
 export const generateEmail = async (payload) => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error('Not authenticated');
-    }
-
+    const headers = await getAuthHeader()
     const response = await fetch(`${BASE_URL}/api/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...headers
       },
       body: JSON.stringify(payload),
     });
@@ -34,17 +37,15 @@ export const generateEmail = async (payload) => {
 
 export const sendEmail = async (emailData) => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
+    const headers = await getAuthHeader()
+    const gmailToken = sessionStorage.getItem('gmail_token')
     
-    if (!session) {
-      throw new Error('Not authenticated');
-    }
-
     const response = await fetch(`${BASE_URL}/api/send-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
+        ...headers,
+        'X-Gmail-Token': gmailToken || ''
       },
       body: JSON.stringify(emailData),
     });

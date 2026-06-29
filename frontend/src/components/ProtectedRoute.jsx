@@ -1,8 +1,9 @@
+// Protected route wrapper using Firebase Auth and clean Tailwind design
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
 import AuthButton from './AuthButton';
 
-const ProtectedRoute = ({ children }) => {
+export function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -31,6 +32,6 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return children;
-};
+}
 
 export default ProtectedRoute;

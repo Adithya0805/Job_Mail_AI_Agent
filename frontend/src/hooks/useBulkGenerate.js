@@ -1,5 +1,6 @@
+// useBulkGenerate hook updated to use Firebase Auth tokens
 import { useState, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { auth } from '../lib/firebase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -33,14 +34,15 @@ export function useBulkGenerate() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const user = auth.currentUser;
+      if (!user) throw new Error("Not authenticated");
+      const token = await user.getIdToken();
 
       const response = await fetch(`${BASE_URL}/api/bulk/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ jobs, profile, mode_override }),
         signal: abortControllerRef.current.signal

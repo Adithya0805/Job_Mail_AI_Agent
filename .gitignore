@@ -14,3 +14,4 @@ dist/
 venv/
 *.log
 verify_keys.py
+firebase-service-account.json
