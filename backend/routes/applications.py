@@ -1,79 +1,66 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, Optional
+# Applications routes performing CRUD operations via PostgreSQL asyncpg
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from middleware.auth import verify_token
-import httpx
-import os
+from db.database import get_db
+import uuid
 
 router = APIRouter()
 
-class StatusUpdateRequest(BaseModel):
-    status: str # "sent | replied | interview | rejected | offer"
+class UpdateStatusRequest(BaseModel):
+    status: str
 
-def get_supabase_client():
-    supabase_url = os.environ.get("SUPABASE_URL")
-    service_key = os.environ.get("SUPABASE_SERVICE_KEY")
-    return supabase_url, service_key
-
-@router.get("/")
+@router.get("/applications")
 async def get_applications(user: dict = Depends(verify_token)):
-    user_id = user.get("id")
-    supabase_url, service_key = get_supabase_client()
+    async with get_db() as db:
+        rows = await db.fetch("""
+            SELECT id, user_id, company_name, role, hr_email, subject, 
+                   mode_used, matched_skills, word_count, gmail_message_id, 
+                   status, created_at, updated_at 
+            FROM applications 
+            WHERE user_id = $1 
+            ORDER BY created_at DESC
+        """, user['uid'])
     
-    url = f"{supabase_url}/rest/v1/applications?user_id=eq.{user_id}&order=created_at.desc"
-    headers = {
-        "apikey": service_key,
-        "Authorization": f"Bearer {service_key}"
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url, headers=headers)
-        if response.status_code != 200:
-            raise HTTPException(status_code=500, detail="Failed to fetch applications")
-        return response.json()
+    # Convert Records to standard Python dictionaries.
+    # UUIDs and datetimes are automatically serialized to JSON by FastAPI.
+    return [dict(r) for r in rows]
 
-@router.patch("/{app_id}/status")
-async def update_status(app_id: str, payload: StatusUpdateRequest, user: dict = Depends(verify_token)):
-    user_id = user.get("id")
-    supabase_url, service_key = get_supabase_client()
-    
-    url = f"{supabase_url}/rest/v1/applications?id=eq.{app_id}&user_id=eq.{user_id}"
-    headers = {
-        "apikey": service_key,
-        "Authorization": f"Bearer {service_key}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-    }
-    # updated_at will be set implicitly by DB if using triggers, but doing explicitly just in case
-    data = {
-        "status": payload.status,
-        "updated_at": "now()"
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.patch(url, headers=headers, json=data)
-        if response.status_code >= 400:
-            raise HTTPException(status_code=500, detail="Failed to update application")
-        
-        result = response.json()
-        if not result:
-            raise HTTPException(status_code=404, detail="Application not found or unauthorized")
-        return result[0]
+@router.patch("/applications/{id}/status")
+async def update_application_status(
+    id: str, 
+    payload: UpdateStatusRequest, 
+    user: dict = Depends(verify_token)
+):
+    try:
+        app_uuid = uuid.UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application ID format")
 
-@router.delete("/{app_id}")
-async def delete_application(app_id: str, user: dict = Depends(verify_token)):
-    user_id = user.get("id")
-    supabase_url, service_key = get_supabase_client()
-    
-    url = f"{supabase_url}/rest/v1/applications?id=eq.{app_id}&user_id=eq.{user_id}"
-    headers = {
-        "apikey": service_key,
-        "Authorization": f"Bearer {service_key}"
-    }
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.delete(url, headers=headers)
-        if response.status_code >= 400:
-            raise HTTPException(status_code=500, detail="Failed to delete application")
+    async with get_db() as db:
+        row = await db.fetchrow("""
+            UPDATE applications 
+            SET status=$1, updated_at=NOW()
+            WHERE id=$2 AND user_id=$3
+            RETURNING *
+        """, payload.status, app_uuid, user['uid'])
         
-        return {"deleted": True}
+    if not row:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    return dict(row)
+
+@router.delete("/applications/{id}")
+async def delete_application(id: str, user: dict = Depends(verify_token)):
+    try:
+        app_uuid = uuid.UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid application ID format")
+
+    async with get_db() as db:
+        await db.execute("""
+            DELETE FROM applications 
+            WHERE id=$1 AND user_id=$2
+        """, app_uuid, user['uid'])
+        
+    return {"deleted": True}

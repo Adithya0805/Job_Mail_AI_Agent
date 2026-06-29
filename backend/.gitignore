@@ -1,0 +1,6 @@
+# Exclude sensitive keys and local build artifacts from git
+firebase-service-account.json
+.env
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -1,21 +1,19 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+# Bulk routes updated to use Firebase auth context and asyncpg database insertion
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Header
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import List, Optional
 from middleware.auth import verify_token
 from services.bulk_generator import BulkGeneratorService
 from services.gmail_service import GmailService, TokenExpiredError
-from services.supabase_admin import SupabaseAdmin
+from db.database import get_db
 import json
 import asyncio
-import httpx
 import os
-import re
 
 router = APIRouter()
 bulk_generator = BulkGeneratorService()
 gmail_service = GmailService()
-supabase_admin = SupabaseAdmin()
 
 class BulkGenerateRequest(BaseModel):
     jobs: List[dict]
@@ -36,15 +34,14 @@ class BulkSendEmail(BaseModel):
 class BulkSendRequest(BaseModel):
     emails: List[BulkSendEmail]
 
-@router.post("/validate")
+@router.post("/bulk/validate")
 async def validate_csv(file: UploadFile = File(...)):
-    # Server side validation scaffold (not fully implemented with csv reader here as instructed "safety net")
-    # Real validation happens in frontend PapaParse as per constraints.
+    # Server side validation placeholder, client validation is primary
     return {"status": "ok", "message": "File received"}
 
-@router.post("/generate")
+@router.post("/bulk/generate")
 async def generate_bulk(request: BulkGenerateRequest, user: dict = Depends(verify_token)):
-    user_id = user.get("id")
+    user_id = user['uid']
     
     if len(request.jobs) > 25:
         raise HTTPException(status_code=400, detail="Cannot process more than 25 jobs at once")
@@ -64,27 +61,24 @@ async def generate_bulk(request: BulkGenerateRequest, user: dict = Depends(verif
         }
     )
 
-async def send_bulk_generator(emails: List[BulkSendEmail], user_id: str, user_name: str, user_email: str):
+async def send_bulk_generator(emails: List[BulkSendEmail], gmail_token: str, user_id: str, user_name: str, user_email: str):
     total_sent = 0
     total_failed = 0
     message_ids = []
-
-    try:
-        tokens = await supabase_admin.get_gmail_token(user_id)
-        access_token = tokens["access_token"]
-        refresh_token = tokens["refresh_token"]
-    except Exception as e:
-        yield f"data: {json.dumps({'event': 'send_error', 'index': 0, 'company': 'System', 'error': 'Failed to get Gmail token: ' + str(e)})}\n\n"
-        yield f"data: {json.dumps({'event': 'send_complete', 'total_sent': 0, 'total_failed': len(emails), 'message_ids': []})}\n\n"
-        return
+    token_expired = False
 
     for i, email in enumerate(emails):
+        if token_expired:
+            total_failed += 1
+            yield f"data: {json.dumps({'event': 'send_error', 'index': i, 'company': email.company_name, 'error': 'Gmail token expired — reconnect Gmail in settings'})}\n\n"
+            continue
+
         full_body = email.body + "\n\n" + email.sign_off
         
         try:
             try:
                 send_result = await gmail_service.send_email(
-                    gmail_access_token=access_token,
+                    gmail_access_token=gmail_token,
                     to=email.to,
                     subject=email.subject,
                     body=full_body,
@@ -92,43 +86,23 @@ async def send_bulk_generator(emails: List[BulkSendEmail], user_id: str, user_na
                     from_email=user_email
                 )
             except TokenExpiredError:
-                if not refresh_token:
-                    raise Exception("Gmail token expired — reconnect Gmail in settings")
-                access_token = await gmail_service.refresh_access_token(refresh_token)
-                send_result = await gmail_service.send_email(
-                    gmail_access_token=access_token,
-                    to=email.to,
-                    subject=email.subject,
-                    body=full_body,
-                    from_name=user_name,
-                    from_email=user_email
-                )
+                # With Firebase auth, we don't store refresh tokens on the backend database.
+                # So we mark as expired and fail the remaining emails.
+                token_expired = True
+                raise Exception("Gmail token expired — reconnect Gmail in settings")
 
-            # Insert to applications table
+            # Insert to applications table using asyncpg
             try:
-                supabase_url = os.environ.get("SUPABASE_URL")
-                service_key = os.environ.get("SUPABASE_SERVICE_KEY")
-                async with httpx.AsyncClient() as client:
-                    db_url = f"{supabase_url}/rest/v1/applications"
-                    db_headers = {
-                        "apikey": service_key,
-                        "Authorization": f"Bearer {service_key}",
-                        "Content-Type": "application/json",
-                        "Prefer": "return=minimal"
-                    }
-                    db_payload = {
-                        "user_id": user_id,
-                        "company_name": email.company_name,
-                        "role": email.role,
-                        "hr_email": email.to,
-                        "subject": email.subject,
-                        "mode_used": email.mode_used,
-                        "matched_skills": email.matched_skills,
-                        "word_count": email.word_count,
-                        "gmail_message_id": send_result["message_id"],
-                        "status": "sent"
-                    }
-                    await client.post(db_url, headers=db_headers, json=db_payload)
+                async with get_db() as db:
+                    await db.execute("""
+                        INSERT INTO applications 
+                        (user_id, company_name, role, hr_email, subject,
+                         mode_used, matched_skills, word_count, 
+                         gmail_message_id, status)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'sent')
+                    """, user_id, email.company_name, email.role, email.to, email.subject,
+                         email.mode_used, email.matched_skills, email.word_count,
+                         send_result["message_id"])
             except Exception as db_ex:
                 print(f"Warning DB insert failed: {str(db_ex)}")
             
@@ -145,17 +119,24 @@ async def send_bulk_generator(emails: List[BulkSendEmail], user_id: str, user_na
 
     yield f"data: {json.dumps({'event': 'send_complete', 'total_sent': total_sent, 'total_failed': total_failed, 'message_ids': message_ids})}\n\n"
 
-@router.post("/send")
-async def send_bulk(request: BulkSendRequest, user: dict = Depends(verify_token)):
-    user_id = user.get("id")
-    user_email = user.get("email")
-    user_name = user.get("user_metadata", {}).get("full_name", "Candidate")
+@router.post("/bulk/send")
+async def send_bulk(
+    request: BulkSendRequest, 
+    user: dict = Depends(verify_token),
+    x_gmail_token: Optional[str] = Header(None, alias="X-Gmail-Token")
+):
+    if not x_gmail_token:
+        raise HTTPException(status_code=400, detail="Gmail token missing. Please sign in again.")
+
+    user_id = user['uid']
+    user_email = user['email']
+    user_name = user.get('name') or "Candidate"
     
     if len(request.emails) > 25:
         raise HTTPException(status_code=400, detail="Cannot send more than 25 emails at once")
 
     return StreamingResponse(
-        send_bulk_generator(request.emails, user_id, user_name, user_email),
+        send_bulk_generator(request.emails, x_gmail_token, user_id, user_name, user_email),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
