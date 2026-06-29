@@ -18,4 +18,5 @@ EXPOSE 8000
 
 # --workers 2: SSE endpoints hold long-lived connections.
 # A single worker blocks ALL other requests while streaming.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+# Railway injects $PORT dynamically — must use it or health check will fail
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 2"]
