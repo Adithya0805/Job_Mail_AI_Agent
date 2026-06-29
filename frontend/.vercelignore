@@ -1,0 +1,7 @@
+# Files excluded from Vercel deploys
+node_modules/
+.env.local
+.env.development
+*.log
+dist/
+.DS_Store

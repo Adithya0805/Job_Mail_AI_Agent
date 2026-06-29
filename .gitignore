@@ -1,0 +1,16 @@
+# Root .gitignore — covers both frontend and backend
+node_modules/
+.env
+.env.local
+.env.development
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+dist/
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+*.log
+verify_keys.py

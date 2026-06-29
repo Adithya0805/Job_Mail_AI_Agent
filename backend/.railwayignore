@@ -1,0 +1,11 @@
+# Files/folders to exclude from Railway deploys
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.local
+*.egg-info/
+.pytest_cache/
+tests/
+.git/
+verify_keys.py
