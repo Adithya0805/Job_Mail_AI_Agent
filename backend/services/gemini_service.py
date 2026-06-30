@@ -10,7 +10,7 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 class GeminiService:
     def __init__(self):
-        self.model_name = "gemini-2.0-flash"
+        self.model_name = "gemini-2.0-flash-lite"
 
     def _call_gemini_json(self, prompt: str, temperature: float = 0.7, retries: int = 1) -> dict:
         """Helper to call Gemini and ensure valid JSON response with 1 retry."""
