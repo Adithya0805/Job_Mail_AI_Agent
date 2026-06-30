@@ -1,3 +1,4 @@
+# Email generation route using Firebase Auth and Gemini AI
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
 from services.gemini_service import GeminiService
@@ -7,10 +8,10 @@ from middleware.auth import verify_token
 router = APIRouter()
 gemini_service = GeminiService()
 
-@router.post("/")
+@router.post("/generate")
 async def generate_email_endpoint(payload: Dict[str, Any], user: dict = Depends(verify_token)):
     try:
-        user_id = user.get("id")
+        user_id = user.get("uid")
         print(f"[AUTH] Email generation triggered by user: {user_id}")
 
         # Validate profile using Pydantic model

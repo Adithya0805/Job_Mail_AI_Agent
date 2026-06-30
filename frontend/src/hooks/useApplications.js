@@ -1,5 +1,5 @@
-// Applications hook updated to use Firebase Auth token
-import { useState } from 'react';
+// Applications hook updated to use Firebase Auth token and auto-fetch on mount
+import { useState, useEffect } from 'react';
 import { auth } from '../lib/firebase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -36,6 +36,7 @@ export function useApplications() {
       if (!res.ok) throw new Error('Failed to fetch applications');
       const data = await res.json();
       setApplications(data);
+      setError('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -75,6 +76,24 @@ export function useApplications() {
       setError('Failed to delete application');
     }
   };
+
+  // Automatically fetch applications once authenticated user is available
+  useEffect(() => {
+    let unsubscribe;
+    
+    unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchApplications();
+      } else {
+        setApplications([]);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, []);
 
   return { applications, loading, error, stats, fetchApplications, updateStatus, deleteApplication };
 }
