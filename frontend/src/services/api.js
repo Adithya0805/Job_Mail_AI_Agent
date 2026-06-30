@@ -40,7 +40,7 @@ export const generateEmail = async (payload) => {
 export const sendEmail = async (emailData) => {
   try {
     const headers = await getAuthHeader()
-    const gmailToken = sessionStorage.getItem('gmail_token')
+    const gmailToken = localStorage.getItem('gmail_token')
     
     const response = await fetch(`${BASE_URL}/api/send-email`, {
       method: 'POST',

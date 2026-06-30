@@ -37,7 +37,7 @@ export function useBulkSend() {
       const user = auth.currentUser;
       if (!user) throw new Error("Not authenticated");
       const token = await user.getIdToken();
-      const gmailToken = sessionStorage.getItem('gmail_token');
+      const gmailToken = localStorage.getItem('gmail_token');
 
       const response = await fetch(`${BASE_URL}/api/bulk/send`, {
         method: 'POST',

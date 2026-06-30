@@ -13,7 +13,7 @@ export function AuthButton() {
       // Store Google OAuth Access Token for the Gmail API send flow
       const gmailToken = result._tokenResponse?.oauthAccessToken
       if (gmailToken) {
-        sessionStorage.setItem('gmail_token', gmailToken)
+        localStorage.setItem('gmail_token', gmailToken)
       }
     } catch (err) {
       console.error('Sign in failed:', err.message)
@@ -21,7 +21,7 @@ export function AuthButton() {
   }
 
   async function handleSignOut() {
-    sessionStorage.removeItem('gmail_token')
+    localStorage.removeItem('gmail_token')
     await signOut(auth)
   }
 
