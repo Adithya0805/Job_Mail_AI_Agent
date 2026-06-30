@@ -25,28 +25,28 @@ const ModeSelector = () => {
   ];
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-sm mb-6 border border-gray-200">
-      <h2 className="text-xl font-semibold mb-4 text-gray-800">Select Mode</h2>
+    <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm shadow-xl text-slate-100 mb-6">
+      <h2 className="text-xl font-bold mb-4 text-white">Select Mode</h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {modes.map((mode) => (
           <div
             key={mode.id}
             onClick={() => setSelectedMode(mode.id)}
-            className={`cursor-pointer rounded-lg p-4 border-2 transition-all duration-200 ${
+            className={`cursor-pointer rounded-xl p-4 border transition-all duration-200 ${
               selectedMode === mode.id
-                ? 'border-blue-600 bg-blue-50'
-                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                ? 'border-indigo-500 bg-indigo-500/10'
+                : 'border-slate-850 bg-slate-950/40 hover:border-indigo-500/30 hover:bg-slate-950'
             }`}
           >
-            <h3 className={`font-semibold mb-1 ${selectedMode === mode.id ? 'text-blue-700' : 'text-gray-700'}`}>
+            <h3 className={`font-bold mb-1 ${selectedMode === mode.id ? 'text-indigo-400' : 'text-slate-350'}`}>
               {mode.title}
             </h3>
-            <p className="text-sm text-gray-600">{mode.description}</p>
+            <p className="text-xs text-slate-500">{mode.description}</p>
           </div>
         ))}
       </div>
       {!selectedMode && (
-        <p className="text-red-500 text-sm mt-2">Please select a mode.</p>
+        <p className="text-red-400 text-xs mt-2">Please select a mode.</p>
       )}
     </div>
   );

@@ -73,3 +73,27 @@ export const sendEmail = async (emailData) => {
     throw new Error(error.message || 'Network error occurred');
   }
 };
+
+export const parseResume = async (file) => {
+  try {
+    const headers = await getAuthHeader();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${BASE_URL}/api/resume/parse`, {
+      method: 'POST',
+      headers: {
+        ...headers
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to parse resume');
+    }
+    return data;
+  } catch (error) {
+    throw new Error(error.message || 'Failed to read resume file');
+  }
+};

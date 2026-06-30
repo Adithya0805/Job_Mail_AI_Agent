@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import os
 from db.database import get_pool, close_pool
 from db.migrations import run_migrations
-from routes import profile, generate, send_email, applications, bulk, stats
+from routes import profile, generate, send_email, applications, bulk, stats, resume
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,6 +41,7 @@ app.include_router(send_email.router, prefix="/api", tags=["Send Email"])
 app.include_router(applications.router, prefix="/api", tags=["Applications"])
 app.include_router(bulk.router, prefix="/api", tags=["Bulk"])
 app.include_router(stats.router, prefix="/api", tags=["Stats"])
+app.include_router(resume.router, prefix="/api", tags=["Resume"])
 
 @app.get("/health")
 async def health():
