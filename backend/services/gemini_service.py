@@ -50,7 +50,7 @@ class GeminiService:
                 "Content-Type": "application/json"
             }
             payload = {
-                "model": "llama-3.3-70b-specdec",
+                "model": "llama-3.3-70b-versatile",
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],
