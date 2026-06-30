@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
@@ -12,7 +12,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Public Landing Page */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<Landing />} />
         
         {/* Workspace Routes */}
         <Route 
