@@ -1,0 +1,4 @@
+hr_email,job_description,mode,company_name,role
+hr@infosys.com,"We are hiring a React Frontend Developer with 1-3 years of experience. Must know HTML, CSS, JavaScript, React, and Tailwind CSS. Experience with state management (Zustand/Redux) is a plus.",professional,Infosys,React Frontend Developer
+careers@zoho.com,"Looking for a Python Backend Developer who is proficient in FastAPI, PostgreSQL, and building RESTful APIs. Must understand database query optimization and Docker containerization.",simple,Zoho,Python Backend Developer
+jobs@tcs.com,"Looking for a Generative AI & ML Engineer. Requirements: experience with Google Gemini API, LangChain, OpenAI, Python, and vector databases (Pinecone/Chroma). Must know how to design LLM pipelines.",advanced,TCS,Generative AI Engineer

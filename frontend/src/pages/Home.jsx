@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileForm from '../components/ProfileForm';
 import JobInputForm from '../components/JobInputForm';
+import MemoryInputForm from '../components/MemoryInputForm';
 import ModeSelector from '../components/ModeSelector';
 import EmailPreview from '../components/EmailPreview';
 import useProfileStore from '../store/useProfileStore';
@@ -56,9 +57,10 @@ const Home = () => {
             <ProfileForm />
           </div>
 
-          {/* Right Panel - Job Details & Mode */}
+          {/* Right Panel - Job Details, Memory, & Mode */}
           <div className="w-full md:w-3/5 flex flex-col">
             <JobInputForm />
+            <MemoryInputForm />
             <ModeSelector />
           </div>
         </div>
@@ -117,7 +119,7 @@ const Home = () => {
               onClick={() => navigate('/dashboard')}
               className="text-xs text-gray-500 hover:text-blue-600 font-medium mr-1 transition-colors"
             >
-              {stats.sent} emails sent recently
+              {stats.sent} applications tracked
             </button>
           </div>
         </div>

@@ -24,6 +24,7 @@ const useProfileStore = create(
         projects: [],
         certifications: [],
         summary: '',
+        specific_memory: '',
       },
       job_input: {
         hr_email: '',

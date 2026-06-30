@@ -1,6 +1,5 @@
-// Applications hook updated to use Firebase Auth token and auto-fetch on mount
+// Applications hook using anonymous client UUID headers and loading on mount
 import { useState, useEffect } from 'react';
-import { auth } from '../lib/firebase';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -11,7 +10,7 @@ export function useApplications() {
   
   const stats = {
     total: applications.length,
-    sent: applications.filter(a => a.status === 'sent').length,
+    sent: applications.filter(a => a.status === 'sent' || a.status === 'copied').length,
     replied: applications.filter(a => a.status === 'replied').length,
     interview: applications.filter(a => a.status === 'interview').length,
     offer: applications.filter(a => a.status === 'offer').length,
@@ -19,12 +18,11 @@ export function useApplications() {
   };
 
   const getHeaders = async () => {
-    const user = auth.currentUser;
-    if (!user) throw new Error('Not authenticated');
-    const token = await user.getIdToken();
+    const uuid = localStorage.getItem('client_uuid');
+    if (!uuid) throw new Error('Client session ID missing');
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'X-User-ID': uuid
     };
   };
 
@@ -77,22 +75,18 @@ export function useApplications() {
     }
   };
 
-  // Automatically fetch applications once authenticated user is available
+  // Automatically fetch applications once anonymous client session is established
   useEffect(() => {
-    let unsubscribe;
-    
-    unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
+    const uuid = localStorage.getItem('client_uuid');
+    if (uuid) {
+      fetchApplications();
+    } else {
+      // Small delay to wait for useAuth to initialize client_uuid on first load
+      const timer = setTimeout(() => {
         fetchApplications();
-      } else {
-        setApplications([]);
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   return { applications, loading, error, stats, fetchApplications, updateStatus, deleteApplication };

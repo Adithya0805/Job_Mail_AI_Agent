@@ -167,7 +167,7 @@ const BulkApply = () => {
         {/* HEADER */}
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Bulk Apply</h1>
-          <p className="text-gray-600 mt-2">Upload a CSV to generate and send up to 25 tailored applications at once.</p>
+          <p className="text-gray-600 mt-2">Upload a CSV to generate up to 25 tailored applications in bulk.</p>
         </div>
 
         {/* SECTION 1: Upload Zone */}
@@ -335,7 +335,7 @@ const BulkApply = () => {
                       parsed_jobs.length > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     }`}
                   >
-                    Generate & Send All →
+                    Generate All →
                   </button>
                 </div>
               </div>

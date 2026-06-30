@@ -88,9 +88,21 @@ Job Description:
 """
         return self._call_llm_json(prompt, temperature=0.2)
 
-    def build_email_prompt(self, profile: dict, jd_analysis: dict, mode: str) -> str:
+    def build_email_prompt(self, profile: dict, jd_analysis: dict, mode: str, specific_memory: str = "") -> str:
+        memory_instruction = ""
+        if specific_memory:
+            memory_instruction = f"""
+===================================================
+CRITICAL VITAL DIRECTIONS / SPECIFIC MEMORY:
+You MUST prioritize and strictly follow these custom user guidelines when writing the content:
+"{specific_memory}"
+Ensure the tone, selected highlights, and specific guidelines are fully incorporated.
+===================================================
+"""
+
         prompt = f"""You are an expert AI assistant writing a tailored cold email for a job application.
 Generate the email based on the following rules, the candidate's profile, and the job description analysis.
+{memory_instruction}
 
 Candidate Profile:
 {json.dumps(profile, indent=2)}
@@ -140,12 +152,13 @@ Return ONLY valid JSON with this exact schema (no explanation):
         job_description = payload.get("job_input", {}).get("job_description", "")
         profile = payload.get("profile", {})
         mode = payload.get("selected_mode", "professional").lower()
+        specific_memory = payload.get("specific_memory", "") or profile.get("specific_memory", "")
 
         # Step 1: Analyze JD
         jd_analysis = self.analyze_jd(job_description)
 
         # Step 2: Build email prompt
-        prompt = self.build_email_prompt(profile, jd_analysis, mode)
+        prompt = self.build_email_prompt(profile, jd_analysis, mode, specific_memory)
 
         # Step 3: Call LLM with correct temperature based on mode
         temperature_map = {

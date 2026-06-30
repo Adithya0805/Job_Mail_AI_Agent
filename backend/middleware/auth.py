@@ -1,13 +1,12 @@
-# Auth middleware verifying Firebase ID token
+# Auth middleware verifying X-User-ID header for anonymous database-backed sessions
 from fastapi import Header, HTTPException
-from firebase_admin_setup import verify_firebase_token
 
-async def verify_token(authorization: str = Header()) -> dict:
-    if not authorization.startswith('Bearer '):
-        raise HTTPException(401, 'Missing Bearer token')
-    id_token = authorization.split(' ')[1]
-    try:
-        user = verify_firebase_token(id_token)
-        return user
-    except Exception as e:
-        raise HTTPException(401, f'Invalid token: {str(e)}')
+async def verify_token(x_user_id: str = Header(None, alias="X-User-ID")) -> dict:
+    if not x_user_id or len(x_user_id.strip()) < 5:
+        raise HTTPException(401, 'Missing or invalid X-User-ID header')
+    # Returns equivalent user dictionary mapping for backend database compatibility
+    return {
+        'uid': x_user_id,
+        'email': 'anonymous@jobmailai.com',
+        'name': 'Candidate'
+    }

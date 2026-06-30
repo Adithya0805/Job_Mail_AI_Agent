@@ -36,7 +36,7 @@ const BulkSendPanel = ({ useBulkSendHook, originalResults }) => {
           <div className="flex justify-between items-end mb-4">
             <div>
               <h2 className="text-xl font-bold text-gray-800">
-                Sending emails... {stats.sent + stats.failed} / {total} sent
+                Logging applications... {stats.sent + stats.failed} / {total} processed
               </h2>
               <p className="text-sm text-gray-500 mt-1">{formatTime(estimatedSeconds)}</p>
             </div>
@@ -53,13 +53,13 @@ const BulkSendPanel = ({ useBulkSendHook, originalResults }) => {
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Send Complete</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Processing Complete</h2>
           <div className="text-gray-600 mb-6 space-y-1">
-            <p className="font-medium text-green-600">✓ {stats.sent} emails sent successfully</p>
+            <p className="font-medium text-green-600">✓ {stats.sent} applications logged successfully</p>
             {stats.failed > 0 && <p className="font-medium text-red-600">✗ {stats.failed} failed</p>}
             <p className="text-sm text-gray-500 flex items-center justify-center gap-1 mt-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
-              All sent emails logged to Applications
+              All applications saved to Applications Tracker
             </p>
           </div>
           <div className="flex gap-4">
@@ -94,15 +94,12 @@ const BulkSendPanel = ({ useBulkSendHook, originalResults }) => {
                 </div>
                 <div>
                   {job.status === 'queued' && <span className="text-xs font-medium px-2 py-1 bg-gray-100 text-gray-600 rounded-full flex items-center gap-1">⏳ Queued</span>}
-                  {job.status === 'sending' && <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Sending...</span>}
-                  {job.status === 'sent' && <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full flex items-center gap-1">✓ Sent</span>}
+                  {job.status === 'sending' && <span className="text-xs font-medium px-2 py-1 bg-blue-100 text-blue-700 rounded-full flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Processing...</span>}
+                  {job.status === 'sent' && <span className="text-xs font-medium px-2 py-1 bg-green-100 text-green-700 rounded-full flex items-center gap-1">✓ Logged</span>}
                   {job.status === 'failed' && <span className="text-xs font-medium px-2 py-1 bg-red-100 text-red-700 rounded-full flex items-center gap-1">✗ Failed</span>}
                 </div>
               </div>
               
-              {job.status === 'sent' && (
-                <p className="text-[10px] text-gray-400 mt-2 truncate">Message ID: {job.message_id}</p>
-              )}
               {job.status === 'failed' && (
                 <p className="text-xs text-red-600 mt-2 truncate" title={job.error}>{job.error}</p>
               )}

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import AuthButton from './AuthButton';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -32,7 +31,7 @@ const Navbar = () => {
             </div>
             {/* Desktop Menu */}
             <div className="hidden sm:ml-6 sm:flex sm:space-x-4 items-center">
-              <NavLink to="/" className={linkClass} end>
+              <NavLink to="/generator" className={linkClass} end>
                 Generate
               </NavLink>
               <NavLink to="/bulk" className={linkClass}>
@@ -45,12 +44,18 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden sm:flex sm:items-center">
-            <AuthButton />
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 border border-blue-100 rounded-full text-xs font-semibold text-blue-700">
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+              Guest Workspace
+            </div>
           </div>
           
           {/* Mobile menu button */}
           <div className="flex items-center sm:hidden gap-4">
-            <AuthButton />
+            <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-100 rounded-full text-[10px] font-semibold text-blue-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              Guest
+            </div>
             <button
               onClick={toggleMenu}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
@@ -72,7 +77,7 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <div className={`${isOpen ? 'block' : 'hidden'} sm:hidden border-t border-gray-200`}>
         <div className="pt-2 pb-3 space-y-1">
-          <NavLink to="/" className={mobileLinkClass} onClick={closeMenu} end>
+          <NavLink to="/generator" className={mobileLinkClass} onClick={closeMenu} end>
             Generate
           </NavLink>
           <NavLink to="/bulk" className={mobileLinkClass} onClick={closeMenu}>

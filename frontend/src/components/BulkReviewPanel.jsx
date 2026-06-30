@@ -36,9 +36,9 @@ const BulkReviewPanel = ({ generatedResults, onSend, onBack }) => {
 
   const handleSendAll = () => {
     if (checkedCount === 0) return;
-    if (window.confirm(`You are about to send ${checkedCount} emails from your Gmail.\nThis cannot be undone. Continue?`)) {
+    if (window.confirm(`You are about to log ${checkedCount} applications to your dashboard. Continue?`)) {
       const selectedToSend = reviewList.filter(i => i.checked).map(i => ({
-        to: i.email_data.to || i.hr_email, // Need to ensure to/hr_email is available. Passed in via state normally.
+        to: i.email_data.to || i.hr_email,
         ...i.email_data,
         company_name: i.company,
         role: i.role
@@ -56,8 +56,8 @@ const BulkReviewPanel = ({ generatedResults, onSend, onBack }) => {
   return (
     <div className="w-full flex flex-col gap-4">
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-800">Review {total} emails before sending</h2>
-        <p className="text-sm text-gray-500 mt-1">You can edit each email. Uncheck any to skip.</p>
+        <h2 className="text-xl font-bold text-gray-800">Review {total} letters before logging</h2>
+        <p className="text-sm text-gray-500 mt-1">You can edit each generated letter here. Uncheck any to skip.</p>
       </div>
 
       <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 pb-4">
@@ -140,7 +140,7 @@ const BulkReviewPanel = ({ generatedResults, onSend, onBack }) => {
       {/* Sticky Bottom Action Bar */}
       <div className="bg-white p-4 rounded-lg shadow-[0_-4px_10px_rgba(0,0,0,0.05)] border border-gray-200 flex justify-between items-center sticky bottom-4 z-10">
         <div className="font-medium text-gray-700">
-          {checkedCount} of {total} emails selected
+          {checkedCount} of {total} letters selected
         </div>
         <div className="flex gap-3">
           <button 
@@ -156,7 +156,7 @@ const BulkReviewPanel = ({ generatedResults, onSend, onBack }) => {
               checkedCount > 0 ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md' : 'bg-gray-200 text-gray-500 cursor-not-allowed'
             }`}
           >
-            Send {checkedCount} Emails
+            Log {checkedCount} Applications
           </button>
         </div>
       </div>

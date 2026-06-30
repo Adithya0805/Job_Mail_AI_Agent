@@ -1,18 +1,24 @@
-// Firebase Auth state observer hook
+// Anonymous Client UUID session observer hook (No login required)
 import { useState, useEffect } from 'react'
-import { onAuthStateChanged } from 'firebase/auth'
-import { auth } from '../lib/firebase'
 
 export function useAuth() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser)
-      setLoading(false)
+    let uuid = localStorage.getItem('client_uuid')
+    if (!uuid) {
+      // Generate a persistent random anonymous user ID
+      uuid = 'user_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+      localStorage.setItem('client_uuid', uuid)
+    }
+    
+    setUser({
+      uid: uuid,
+      displayName: 'Guest User',
+      email: 'guest@jobmailai.com'
     })
-    return unsubscribe
+    setLoading(false)
   }, [])
 
   return { user, loading }

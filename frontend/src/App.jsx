@@ -1,47 +1,45 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
 import Home from './pages/Home';
-import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import BulkApply from './pages/BulkApply';
 
-// Root App component with React Router and Firebase Auth Protection
+// Root App component with public routes and global state
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Workspace Routes */}
         <Route 
-          path="/" 
+          path="/generator" 
           element={
-            <ProtectedRoute>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <Home />
-              </div>
-            </ProtectedRoute>
+            <div className="flex flex-col min-h-screen bg-gray-50">
+              <Navbar />
+              <Home />
+            </div>
           } 
         />
         <Route 
           path="/dashboard" 
           element={
-            <ProtectedRoute>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <Dashboard />
-              </div>
-            </ProtectedRoute>
+            <div className="flex flex-col min-h-screen bg-gray-50">
+              <Navbar />
+              <Dashboard />
+            </div>
           } 
         />
         <Route 
           path="/bulk" 
           element={
-            <ProtectedRoute>
-              <div className="flex flex-col min-h-screen">
-                <Navbar />
-                <BulkApply />
-              </div>
-            </ProtectedRoute>
+            <div className="flex flex-col min-h-screen bg-gray-50">
+              <Navbar />
+              <BulkApply />
+            </div>
           } 
         />
       </Routes>
