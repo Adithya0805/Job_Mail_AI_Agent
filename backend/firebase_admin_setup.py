@@ -11,14 +11,20 @@ def get_firebase_app():
     if _firebase_app is None:
         sa_json = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
         if sa_json:
-            # Parse minified service account JSON from environment variable
-            sa_dict = json.loads(sa_json)
-            cred = credentials.Certificate(sa_dict)
+            try:
+                # Parse minified service account JSON from environment variable
+                sa_dict = json.loads(sa_json)
+                cred = credentials.Certificate(sa_dict)
+            except Exception as parse_err:
+                raise ValueError(f"Failed to parse FIREBASE_SERVICE_ACCOUNT_JSON: {str(parse_err)}")
         else:
             # Fallback to local credential file for development
-            cred = credentials.Certificate(
-                os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'firebase-service-account.json')
-            )
+            sa_path = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', 'firebase-service-account.json')
+            if not os.path.exists(sa_path):
+                raise FileNotFoundError(
+                    "Firebase credentials missing! Please configure the 'FIREBASE_SERVICE_ACCOUNT_JSON' environment variable in Railway."
+                )
+            cred = credentials.Certificate(sa_path)
         _firebase_app = firebase_admin.initialize_app(cred)
     return _firebase_app
 
