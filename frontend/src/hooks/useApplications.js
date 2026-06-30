@@ -18,8 +18,11 @@ export function useApplications() {
   };
 
   const getHeaders = async () => {
-    const uuid = localStorage.getItem('client_uuid');
-    if (!uuid) throw new Error('Client session ID missing');
+    let uuid = localStorage.getItem('client_uuid');
+    if (!uuid) {
+      uuid = 'user_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('client_uuid', uuid);
+    }
     return {
       'Content-Type': 'application/json',
       'X-User-ID': uuid

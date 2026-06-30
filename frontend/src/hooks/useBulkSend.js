@@ -28,11 +28,10 @@ export function useBulkSend() {
     }));
     setSendResults(initialResults);
 
-    const uuid = localStorage.getItem('client_uuid');
+    let uuid = localStorage.getItem('client_uuid');
     if (!uuid) {
-      setComplete(true);
-      setSending(false);
-      return;
+      uuid = 'user_' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('client_uuid', uuid);
     }
 
     // Sequence logging of applications to database in a smooth loop
