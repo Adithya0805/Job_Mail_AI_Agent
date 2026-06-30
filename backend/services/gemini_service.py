@@ -1,12 +1,15 @@
 import os
 import json
+import httpx
 import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Gemini API configuration
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+# Gemini API configuration (if key is present)
+gemini_key = os.environ.get("GEMINI_API_KEY")
+if gemini_key:
+    genai.configure(api_key=gemini_key)
 
 class GeminiService:
     def __init__(self):
@@ -23,8 +26,6 @@ class GeminiService:
         for attempt in range(retries + 1):
             try:
                 response = model.generate_content(prompt, generation_config=generation_config)
-                # Parse JSON
-                # Sometimes gemini returns markdown formatting like ```json ... ``` even with response_mime_type
                 text = response.text.strip()
                 if text.startswith("```json"):
                     text = text[7:]
@@ -36,7 +37,41 @@ class GeminiService:
                 return json.loads(text.strip())
             except Exception as e:
                 if attempt == retries:
-                    raise Exception(f"Failed to generate valid JSON after {retries + 1} attempts: {str(e)}")
+                    raise Exception(f"Failed to generate valid JSON via Gemini after {retries + 1} attempts: {str(e)}")
+
+    def _call_llm_json(self, prompt: str, temperature: float = 0.7) -> dict:
+        """Calls Groq if GROQ_API_KEY is present, otherwise falls back to Gemini."""
+        groq_key = os.environ.get("GROQ_API_KEY")
+        if groq_key:
+            # Use Groq Llama 3 (completely free and allows datacenter calls without blocks)
+            url = "https://api.groq.com/openai/v1/chat/completions"
+            headers = {
+                "Authorization": f"Bearer {groq_key}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": "llama-3.3-70b-specdec",
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": temperature,
+                "response_format": {"type": "json_object"}
+            }
+            try:
+                with httpx.Client() as client:
+                    response = client.post(url, headers=headers, json=payload, timeout=30.0)
+                    if response.status_code != 200:
+                        raise Exception(f"Groq API status {response.status_code}: {response.text}")
+                    data = response.json()
+                    content = data["choices"][0]["message"]["content"].strip()
+                    return json.loads(content)
+            except Exception as e:
+                raise Exception(f"Groq API call failed: {str(e)}")
+        else:
+            # Fallback to standard Gemini API
+            if not os.environ.get("GEMINI_API_KEY"):
+                raise ValueError("Both GROQ_API_KEY and GEMINI_API_KEY are missing. Please configure at least one LLM key in Railway.")
+            return self._call_gemini_json(prompt, temperature)
 
     def analyze_jd(self, job_description: str) -> dict:
         prompt = f"""Analyze this job description and extract:
@@ -51,7 +86,7 @@ Return ONLY valid JSON. No explanation.
 Job Description:
 {job_description}
 """
-        return self._call_gemini_json(prompt, temperature=0.2)
+        return self._call_llm_json(prompt, temperature=0.2)
 
     def build_email_prompt(self, profile: dict, jd_analysis: dict, mode: str) -> str:
         prompt = f"""You are an expert AI assistant writing a tailored cold email for a job application.
@@ -112,7 +147,7 @@ Return ONLY valid JSON with this exact schema (no explanation):
         # Step 2: Build email prompt
         prompt = self.build_email_prompt(profile, jd_analysis, mode)
 
-        # Step 3: Call Gemini with correct temperature based on mode
+        # Step 3: Call LLM with correct temperature based on mode
         temperature_map = {
             "simple": 0.7,
             "professional": 0.5,
@@ -120,8 +155,6 @@ Return ONLY valid JSON with this exact schema (no explanation):
         }
         temperature = temperature_map.get(mode, 0.5)
 
-        # Step 4: Parse response
-        email_data = self._call_gemini_json(prompt, temperature=temperature)
-
-        # Step 5: Return dict
+        # Step 4: Parse and return response
+        email_data = self._call_llm_json(prompt, temperature=temperature)
         return email_data
