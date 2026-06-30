@@ -1,6 +1,6 @@
 // Google Auth button using Firebase Auth and storing Gmail accessToken in sessionStorage
 import React from 'react'
-import { signInWithPopup, signOut } from 'firebase/auth'
+import { signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { auth, googleProvider } from '../lib/firebase'
 import { useAuth } from '../hooks/useAuth'
 
@@ -10,8 +10,9 @@ export function AuthButton() {
   async function handleSignIn() {
     try {
       const result = await signInWithPopup(auth, googleProvider)
-      // Store Google OAuth Access Token for the Gmail API send flow
-      const gmailToken = result._tokenResponse?.oauthAccessToken
+      // Retrieve Google OAuth Access Token using official credentialFromResult method
+      const credential = GoogleAuthProvider.credentialFromResult(result)
+      const gmailToken = credential?.accessToken
       if (gmailToken) {
         localStorage.setItem('gmail_token', gmailToken)
       }
