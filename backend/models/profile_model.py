@@ -36,3 +36,9 @@ class Profile(BaseModel):
     certifications: List[str] = []
     
     summary: str = ""
+    
+    # Optional per-application properties passed during generation/merge checks
+    recipient_name: Optional[str] = None
+    availability_window: Optional[str] = None
+    additional_info: Optional[str] = None
+

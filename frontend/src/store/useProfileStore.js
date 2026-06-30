@@ -29,6 +29,10 @@ const useProfileStore = create(
       job_input: {
         hr_email: '',
         job_description: '',
+        company_name: '',
+        recipient_name: '',
+        availability_window: '',
+        additional_info: '',
       },
       selected_mode: '',
       final_payload: null,

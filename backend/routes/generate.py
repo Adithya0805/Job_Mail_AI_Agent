@@ -1,12 +1,12 @@
-# Email generation route using Firebase Auth and Gemini AI
+# Email generation route using EmailAlgorithmService for structured JD-matching outputs
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict, Any
-from services.gemini_service import GeminiService
+from services.email_algorithm import EmailAlgorithmService
 from models.profile_model import Profile
 from middleware.auth import verify_token
 
 router = APIRouter()
-gemini_service = GeminiService()
+email_service = EmailAlgorithmService()
 
 @router.post("/generate")
 async def generate_email_endpoint(payload: Dict[str, Any], user: dict = Depends(verify_token)):
@@ -18,8 +18,8 @@ async def generate_email_endpoint(payload: Dict[str, Any], user: dict = Depends(
         profile_data = payload.get("profile", {})
         Profile(**profile_data)
 
-        # Call Gemini service
-        response = gemini_service.generate_email(payload)
+        # Call EmailAlgorithm service
+        response = email_service.generate_email(payload)
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": "Generation failed", "detail": str(e)})
