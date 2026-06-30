@@ -26,7 +26,9 @@ export const generateEmail = async (payload) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail?.error || data.detail || 'Failed to generate email');
+      // Extract detailed error if available
+      const errorMsg = data.detail?.detail || data.detail?.error || data.detail || 'Failed to generate email';
+      throw new Error(errorMsg);
     }
 
     return data;
@@ -53,7 +55,8 @@ export const sendEmail = async (emailData) => {
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.detail?.error || data.detail || 'Failed to send email');
+      const errorMsg = data.detail?.detail || data.detail?.error || data.detail || 'Failed to send email';
+      throw new Error(errorMsg);
     }
 
     return data;
